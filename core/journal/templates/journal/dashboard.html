@@ -2,7 +2,7 @@
 {% load crispy_forms_tags %}
 
 {% block content %}
-<div class="row mb-4">
+<div class="row mb-4 fade-in">
     <div class="col-12 d-flex align-items-center justify-content-between">
         <div>
             <h1 class="display-3 fw-bold serif mb-1">
@@ -21,9 +21,9 @@
 
 <div class="row g-4 h-100">
     <!-- COL 1: Daily Check-in & Habits -->
-    <div class="col-lg-4 d-flex flex-column gap-4">
+    <div class="col-lg-4 d-flex flex-column gap-4 fade-in" style="animation-delay: 0.1s;">
         <!-- Daily Check-in (Yellow Card) -->
-        <div class="glass-panel-premium p-4" style="background: var(--bg-card);">
+        <div class="glass-panel-premium p-4 hover-lift" style="background: var(--bg-card);">
             <div class="d-flex align-items-center gap-2 mb-3">
                 <span class="badgerounded-circle p-2" style="background: rgba(255, 193, 7, 0.1); color: #ffc107;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
@@ -54,7 +54,7 @@
                 </div>
 
                 <div class="d-grid">
-                    <button type="submit" class="btn btn-warning rounded-pill fw-bold text-dark py-2">
+                    <button type="submit" class="btn btn-warning rounded-pill fw-bold text-dark py-2 hover-lift">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
                             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
                             class="me-1">
@@ -68,7 +68,7 @@
         </div>
 
         <!-- Daily Habits -->
-        <div class="glass-panel-premium p-4 flex-grow-1">
+        <div class="glass-panel-premium p-4 flex-grow-1 hover-lift">
             <div class="d-flex align-items-center justify-content-between mb-3">
                 <h5 class="fw-bold serif m-0">Daily Habits</h5>
                 <a href="{% url 'habits_list' %}" class="small text-muted text-decoration-none">+</a>
@@ -77,7 +77,7 @@
             <div class="d-flex flex-column gap-2 custom-scroll" style="max-height: 300px; overflow-y: auto;">
                 {% for item in habit_data %}
                 <div class="d-flex align-items-center gap-3 p-3 rounded-3 habit-card"
-                    style="background: rgba(138, 191, 158, 0.15);">
+                    style="background: rgba(138, 191, 158, 0.15); transition: transform 0.2s;">
                     <form method="post" class="m-0 d-flex align-items-center w-100">
                         {% csrf_token %}
                         <input type="hidden" name="toggle_habit" value="{{ item.habit.id }}">
@@ -110,7 +110,7 @@
         </div>
 
         <!-- Daily Goals -->
-        <div class="glass-panel-premium p-4 flex-grow-1">
+        <div class="glass-panel-premium p-4 flex-grow-1 hover-lift">
             <div class="d-flex align-items-center justify-content-between mb-3">
                 <h5 class="fw-bold serif m-0">Daily Goals</h5>
                 <a href="{% url 'goals_tracker' %}" class="small text-muted text-decoration-none">+</a>
@@ -119,7 +119,7 @@
             <div class="d-flex flex-column gap-2" style="max-height: 300px; overflow-y: auto;">
                 {% for goal in daily_goals %}
                 <div class="d-flex align-items-center gap-3 p-3 rounded-3 goal-card"
-                    style="background: rgba(224, 131, 109, 0.15);">
+                    style="background: rgba(224, 131, 109, 0.15); transition: transform 0.2s;">
                     <form method="post" class="m-0 d-flex align-items-center w-100">
                         {% csrf_token %}
                         <input type="hidden" name="toggle_goal" value="1">
@@ -153,9 +153,9 @@
     </div>
 
     <!-- COL 2: Graphs & Metrics -->
-    <div class="col-lg-4 d-flex flex-column gap-4">
+    <div class="col-lg-4 d-flex flex-column gap-4 fade-in" style="animation-delay: 0.2s;">
         <!-- Sleep Patterns -->
-        <div class="glass-panel-premium p-4">
+        <div class="glass-panel-premium p-4 hover-lift">
             <div class="d-flex justify-content-between">
                 <div>
                     <h5 class="fw-bold serif m-0">Sleep Patterns</h5>
@@ -171,7 +171,7 @@
         </div>
 
         <!-- Consistency Circles -->
-        <div class="glass-panel-premium p-4">
+        <div class="glass-panel-premium p-4 hover-lift">
             <h5 class="fw-bold serif mb-4">Consistency (30d)</h5>
             <div class="d-flex justify-content-around align-items-center">
 
@@ -213,7 +213,7 @@
         </div>
 
         <!-- Habit Performance Bar -->
-        <div class="glass-panel-premium p-4 flex-grow-1">
+        <div class="glass-panel-premium p-4 flex-grow-1 hover-lift">
             <h5 class="fw-bold serif mb-3">Habit Performance</h5>
             <div style="height: 150px;">
                 <canvas id="habitBarChart"></canvas>
@@ -229,9 +229,9 @@
     </div>
 
     <!-- COL 3: Calendar & Reflections -->
-    <div class="col-lg-4 d-flex flex-column gap-4">
+    <div class="col-lg-4 d-flex flex-column gap-4 fade-in" style="animation-delay: 0.3s;">
         <!-- Calendar Widget -->
-        <div class="glass-panel-premium p-4">
+        <div class="glass-panel-premium p-4 hover-lift">
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h5 class="fw-bold serif m-0">{{ current_month_name }}</h5>
             </div>
@@ -271,12 +271,12 @@
             </div>
         </div>
 
-        <div class="glass-panel-premium p-4 flex-grow-1">
+        <div class="glass-panel-premium p-4 flex-grow-1 hover-lift">
             <h5 class="fw-bold serif mb-4">Reflections</h5>
 
             <div class="d-flex flex-column gap-3 custom-scroll" style="max-height: 800px; overflow-y: auto;">
                 {% for entry in entries %}
-                <div class="p-3 rounded-3" style="background: rgba(255, 255, 255, 0.05);">
+                <div class="p-3 rounded-3" style="background: rgba(255, 255, 255, 0.05); transition: transform 0.2s;">
                     <div class="d-flex gap-2 mb-1">
                         <span style="color: #ffc107; font-size: 1.2rem;">❝</span>
                         <p class="small text-muted mb-0 lh-sm fst-italic">"{{ entry.gratitude }}"</p>
@@ -299,6 +299,14 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
+        // Helper to get CSS variable value
+        function getCssVar(name) {
+            return getComputedStyle(document.body).getPropertyValue(name).trim();
+        }
+
+        // Get current theme text color
+        const textColor = getCssVar('--text-muted') || '#a0a0a0';
+
         // 1. Mini Sleep Chart
         const sleepCtx = document.getElementById('miniSleepChart').getContext('2d');
         const sleepDates = JSON.parse(document.getElementById('dates-data').textContent);
@@ -354,7 +362,13 @@
                 maintainAspectRatio: false,
                 plugins: { legend: { display: false } },
                 scales: {
-                    x: { grid: { display: false }, ticks: { fontSize: 10 } },
+                    x: {
+                        grid: { display: false },
+                        ticks: {
+                            fontSize: 10,
+                            color: textColor // Apply dynamic color
+                        }
+                    },
                     y: { display: false }
                 }
             }
@@ -362,8 +376,9 @@
 
         // 3. Goal Progress Chart
         const goalCtx = document.getElementById('goalBarChart').getContext('2d');
-        const activeGoals = {{ active_goals_count }};
-        const completedGoals = {{ completed_goals_count }};
+        const activeGoals = {{ active_goals_count }
+    };
+    const completedGoals = {{ completed_goals_count }};
 
     new Chart(goalCtx, {
         type: 'bar', // Using bar for clear comparison
@@ -383,7 +398,12 @@
             plugins: { legend: { display: false } },
             scales: {
                 x: { display: false, grid: { display: false }, max: Math.max(activeGoals, completedGoals, 5) },
-                y: { grid: { display: false }, ticks: { color: 'var(--text-muted)' } }
+                y: {
+                    grid: { display: false },
+                    ticks: {
+                        color: textColor // Apply dynamic color
+                    }
+                }
             }
         }
     });

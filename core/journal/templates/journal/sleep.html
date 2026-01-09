@@ -2,40 +2,47 @@
 {% load crispy_forms_tags %}
 
 {% block content %}
-<div class="row mb-5 align-items-end">
-    <div class="col-md-8">
-        <h1 class="display-4 fw-bold serif mb-2">Sleep Tracker</h1>
-        <p class="text-muted fs-5">Monitor your rest and recovery</p>
-    </div>
-    <div class="col-md-4 text-md-end">
-        <button class="btn btn-primary rounded-pill px-4" data-bs-toggle="modal" data-bs-target="#logSleepModal">
-            + Log Sleep
+<div class="row mb-5 fade-in">
+    <div class="col-12 d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
+        <div>
+            <h1 class="display-4 fw-bold serif mb-1">Sleep Tracker</h1>
+            <p class="text-muted fs-5">Monitor your rest and recovery</p>
+        </div>
+        <button class="btn btn-primary btn-lg rounded-pill px-5 shadow-sm hover-lift" data-bs-toggle="modal"
+            data-bs-target="#logSleepModal">
+            <span class="fs-4 align-middle me-2">+</span> Log Sleep
         </button>
     </div>
 </div>
 
 <!-- Stats Row -->
-<div class="row g-4 mb-5">
+<div class="row g-4 mb-5 fade-in" style="animation-delay: 0.1s;">
     <div class="col-md-6">
-        <div class="glass-panel-premium p-4">
-            <h6 class="text-muted text-uppercase small fw-bold letter-spacing-1 mb-2">Avg Hours</h6>
-            <h2 class="display-4 fw-bold mb-0">{{ avg_hours }}h</h2>
+        <div class="glass-panel-premium p-4 text-center h-100 hover-lift" style="background: rgba(138, 191, 158, 0.1);">
+            <h6 class="text-muted text-uppercase letter-spacing-2 mb-3">Avg Duration</h6>
+            <h2 class="display-4 fw-bold mb-0" style="color: var(--accent-primary);">{{ avg_hours }} <span
+                    class="fs-4 text-muted">hrs</span></h2>
         </div>
     </div>
     <div class="col-md-6">
-        <div class="glass-panel-premium p-4">
-            <h6 class="text-muted text-uppercase small fw-bold letter-spacing-1 mb-2">Avg Quality</h6>
-            <h2 class="display-4 fw-bold mb-0">{{ avg_quality }} / 5</h2>
-            <!-- Placeholder for quality if implemented later -->
+        <div class="glass-panel-premium p-4 text-center h-100 hover-lift" style="background: rgba(143, 211, 244, 0.1);">
+            <h6 class="text-muted text-uppercase letter-spacing-2 mb-3">Sleep Quality</h6>
+            <div class="d-flex justify-content-center align-items-baseline gap-2">
+                <h2 class="display-4 fw-bold mb-0" style="color: #8fd3f4;">{{ avg_quality }}</h2>
+                <span class="fs-4 text-muted">/ 5</span>
+            </div>
         </div>
     </div>
 </div>
 
 <!-- Graph -->
-<div class="row">
+<div class="row fade-in" style="animation-delay: 0.2s;">
     <div class="col-12">
-        <div class="glass-panel-premium p-4 pb-5">
-            <h3 class="serif fw-bold mb-4">Sleep History</h3>
+        <div class="glass-panel-premium p-4 pb-5 h-100">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h3 class="serif fw-bold mb-0">Overview</h3>
+                <span class="badge rounded-pill bg-light text-dark px-3 py-2">Last 30 Days</span>
+            </div>
             <div style="height: 400px;">
                 <canvas id="sleepPageChart"></canvas>
             </div>
@@ -48,7 +55,7 @@
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content glass-panel-premium border-0">
             <div class="modal-header border-0">
-                <h5 class="modal-title fw-bold serif">Log Sleep</h5>
+                <h4 class="modal-title fw-bold serif">Log Sleep</h4>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" style="filter: invert(1);"></button>
             </div>
             <div class="modal-body">
@@ -57,7 +64,7 @@
                     <input type="hidden" name="log_entry" value="1">
                     {{ form|crispy }}
                     <div class="d-grid mt-4">
-                        <button type="submit" class="btn btn-primary rounded-pill py-2">Save Entry</button>
+                        <button type="submit" class="btn btn-primary rounded-pill py-3 fw-bold">Save Entry</button>
                     </div>
                 </form>
             </div>
@@ -70,6 +77,14 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
+        // Helper to get CSS variable value
+        function getCssVar(name) {
+            return getComputedStyle(document.body).getPropertyValue(name).trim();
+        }
+
+        // Get current theme text color
+        const textColor = getCssVar('--text-muted') || '#a0a0a0';
+
         const dates = JSON.parse(document.getElementById('dates-data').textContent);
         const sleepData = JSON.parse(document.getElementById('sleep-data').textContent);
         const ctx = document.getElementById('sleepPageChart').getContext('2d');
@@ -90,7 +105,7 @@
                     borderWidth: 2,
                     tension: 0.4,
                     fill: true,
-                    pointBackgroundColor: '#1a1c1a',
+                    pointBackgroundColor: getCssVar('--bg-card') || '#242624',
                     pointBorderColor: '#9BC6A8',
                     pointBorderWidth: 2,
                     pointRadius: 6,
@@ -103,29 +118,65 @@
                 plugins: {
                     legend: { display: false },
                     tooltip: {
-                        backgroundColor: '#242624',
-                        titleColor: '#e0e0e0',
-                        bodyColor: '#a0a0a0',
-                        borderColor: '#333',
+                        backgroundColor: getCssVar('--bg-card') || '#242624',
+                        titleColor: getCssVar('--text-main') || '#e0e0e0',
+                        bodyColor: textColor,
+                        borderColor: getCssVar('--border-color') || '#333',
                         borderWidth: 1,
-                        padding: 10,
+                        padding: 12,
                         displayColors: false,
-                        cornerRadius: 8
+                        cornerRadius: 12,
+                        titleFont: { size: 14, family: "'Playfair Display', serif" },
+                        bodyFont: { size: 13 }
                     }
                 },
                 scales: {
                     y: {
                         beginAtZero: true,
                         grid: { color: 'rgba(255, 255, 255, 0.05)', drawBorder: false },
-                        ticks: { color: '#6c757d' }
+                        ticks: { color: textColor, font: { size: 11 } }
                     },
                     x: {
                         grid: { display: false },
-                        ticks: { color: '#6c757d' }
+                        ticks: { color: textColor, font: { size: 11 } }
                     }
                 }
             }
         });
     });
 </script>
+
+<style>
+    .hover-lift {
+        transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.27), box-shadow 0.3s ease;
+    }
+
+    .hover-lift:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+    }
+
+    .letter-spacing-2 {
+        letter-spacing: 2px;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+
+    .fade-in {
+        opacity: 0;
+        animation: fadeIn 0.8s ease forwards;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>
 {% endblock %}

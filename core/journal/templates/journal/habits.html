@@ -2,55 +2,80 @@
 {% load crispy_forms_tags %}
 
 {% block content %}
-<div class="row mb-4">
-    <div class="col-12 d-flex justify-content-between align-items-center">
+<div class="row mb-5 fade-in">
+    <div class="col-12 d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
         <div>
-            <h1 class="display-5 fw-bold serif mb-1">Habits Tracker</h1>
-            <p class="text-muted">Build consistency, one day at a time</p>
+            <h1 class="display-4 fw-bold serif mb-1">Habits Tracker</h1>
+            <p class="text-muted fs-5">Build consistency, one day at a time</p>
         </div>
-        <button class="btn btn-primary rounded-pill px-4" data-bs-toggle="modal" data-bs-target="#newHabitModal">
-            + New Habit
+        <button class="btn btn-primary btn-lg rounded-pill px-5 shadow-sm hover-lift" data-bs-toggle="modal"
+            data-bs-target="#newHabitModal">
+            <span class="fs-4 align-middle me-2">+</span> New Habit
         </button>
     </div>
 </div>
 
-<div class="custom-scroll" style="max-height: 70vh; overflow-y: auto; padding-right: 5px;">
+<div class="custom-scroll" style="max-height: 70vh; overflow-y: auto; padding: 5px;">
     <div class="row g-4">
         {% for habit in habits %}
-        <div class="col-12">
-            <div class="glass-panel-premium p-4 d-flex justify-content-between align-items-center">
-                <div>
-                    <h4 class="fw-bold mb-1">{{ habit.name }}</h4>
-                    <p class="small text-muted mb-0">
-                        <span>0 days completed</span> • 0% consistency
-                    </p>
-                    <div class="progress mt-3"
-                        style="height: 4px; width: 100%; min-width: 200px; background: var(--border-color);">
-                        <div class="progress-bar" role="progressbar" style="width: 0%; background-color: #E0836D;">
-                        </div>
+        <div class="col-md-6 col-lg-4 fade-in" style="animation-delay: 0.{{ forloop.counter }}s;">
+            <div class="glass-panel-premium p-4 h-100 d-flex flex-column hover-lift">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div class="rounded-circle p-3 d-flex align-items-center justify-content-center"
+                        style="width: 50px; height: 50px; background: rgba(138, 191, 158, 0.2);">
+                        <span class="fs-4">✨</span>
+                    </div>
+                    <div class="dropdown">
+                        <button class="btn btn-link text-muted p-0" data-bs-toggle="dropdown">
+                            •••
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end glass-panel border-0 shadow-lg">
+                            <li>
+                                <form method="post">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="delete_habit" value="1">
+                                    <input type="hidden" name="habit_id" value="{{ habit.id }}">
+                                    <button class="dropdown-item text-danger"
+                                        onclick="return confirm('Delete?')">Delete</button>
+                                </form>
+                            </li>
+                        </ul>
                     </div>
                 </div>
 
-                <form method="post">
-                    {% csrf_token %}
-                    <input type="hidden" name="delete_habit" value="1">
-                    <input type="hidden" name="habit_id" value="{{ habit.id }}">
-                    <button type="submit" class="btn btn-outline-danger btn-sm border-0"
-                        onclick="return confirm('Delete this habit?')">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <polyline points="3 6 5 6 21 6"></polyline>
-                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2">
-                            </path>
-                        </svg>
-                    </button>
-                </form>
+                <h3 class="fw-bold serif mb-1">{{ habit.name }}</h3>
+
+                <div class="mt-auto pt-4">
+                    <div class="d-flex justify-content-between align-items-end mb-3">
+                        <div>
+                            <small class="text-muted text-uppercase letter-spacing-2">Current Streak</small>
+                            <div class="d-flex align-items-center gap-2 mt-1">
+                                <span class="fs-4">🔥</span>
+                                <h2
+                                    class="fw-bold mb-0 {% if habit.current_streak > 0 %}text-warning{% else %}text-muted{% endif %}">
+                                    {{ habit.current_streak }}
+                                </h2>
+                                <span class="text-muted small align-self-end mb-1">days</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Progress Bar styling for visual consistency -->
+                    <div class="progress" style="height: 6px; background: rgba(0,0,0,0.05);">
+                        <div class="progress-bar" role="progressbar" style="width: {% if habit.current_streak > 0 %}100{% else %}5{% endif %}%; 
+                                    background: {% if habit.current_streak > 0 %}#FFC107{% else %}var(--border-color){% endif %};
+                                    border-radius: 10px;">
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
         {% empty %}
-        <div class="col-12">
+        <div class="col-12 fade-in">
             <div class="text-center py-5 glass-panel-premium">
-                <p class="text-muted">No habits tracked yet. Start today!</p>
+                <div class="display-1 mb-3">🌱</div>
+                <h3 class="fw-bold serif">Start Your Journey</h3>
+                <p class="text-muted">Create your first habit to begin tracking.</p>
             </div>
         </div>
         {% endfor %}
@@ -62,7 +87,7 @@
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content glass-panel-premium border-0">
             <div class="modal-header border-0">
-                <h5 class="modal-title fw-bold serif">New Habit</h5>
+                <h4 class="modal-title fw-bold serif">New Habit</h4>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" style="filter: invert(1);"></button>
             </div>
             <div class="modal-body">
@@ -71,11 +96,45 @@
                     <input type="hidden" name="new_habit" value="1">
                     {{ form|crispy }}
                     <div class="d-grid mt-4">
-                        <button type="submit" class="btn btn-primary rounded-pill py-2">Create Habit</button>
+                        <button type="submit" class="btn btn-primary rounded-pill py-3 fw-bold">Create Habit</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
 </div>
+
+<style>
+    .hover-lift {
+        transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.27), box-shadow 0.3s ease;
+    }
+
+    .hover-lift:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+    }
+
+    .letter-spacing-2 {
+        letter-spacing: 2px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .fade-in {
+        opacity: 0;
+        animation: fadeIn 0.8s ease forwards;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>
 {% endblock %}

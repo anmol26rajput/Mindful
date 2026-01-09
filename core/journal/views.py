@@ -44,6 +44,32 @@ def profile_setup(request):
     return render(request, 'journal/profile_form.html', {'form': form})
 
 @login_required
+def profile_overview(request):
+    profile, created = UserProfile.objects.get_or_create(user=request.user)
+    try:
+        onboarding = OnboardingResponse.objects.filter(user=request.user).latest('completion_date')
+    except OnboardingResponse.DoesNotExist:
+        onboarding = None
+
+    if request.method == 'POST':
+        profile_form = UserProfileForm(request.POST, instance=profile)
+        # Handle Onboarding edits if needed (e.g., goals)
+        # For simplicity, we might just update the UserProfile fields here as requested
+        
+        if profile_form.is_valid():
+            profile_form.save()
+            messages.success(request, "Profile updated successfully!")
+            return redirect('profile_overview')
+    else:
+        profile_form = UserProfileForm(instance=profile)
+
+    return render(request, 'journal/profile_overview.html', {
+        'profile_form': profile_form,
+        'profile': profile,
+        'onboarding': onboarding
+    })
+
+@login_required
 def quiz_setup(request):
     if request.method == 'POST':
         form = OnboardingForm(request.POST)

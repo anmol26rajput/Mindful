@@ -38,6 +38,36 @@ class Habit(models.Model):
     def __str__(self):
         return self.name
 
+    @property
+    def current_streak(self):
+        """Calculates current streak for this specific habit"""
+        completions = self.habitcompletion_set.filter(completed=True).order_by('-date').values_list('date', flat=True)
+        if not completions:
+            return 0
+        
+        today = timezone.now().date()
+        streak = 0
+        check_date = today
+        
+        # Check if completed today, otherwise start checking from yesterday
+        if today in completions:
+            streak += 1
+            check_date = today - timedelta(days=1)
+        elif (today - timedelta(days=1)) in completions:
+            # If not done today but done yesterday, streak is still alive (if we consider loose streaks)
+            # Or usually streak counts back from "most recent relative to today"
+            # Strict streak: must include today or yesterday.
+            check_date = today - timedelta(days=1)
+        else:
+            return 0 # Streak broken
+            
+        while check_date in completions:
+            if check_date != today: # Don't double count today if already counted
+                 streak += 1
+            check_date -= timedelta(days=1)
+            
+        return streak
+
 class HabitCompletion(models.Model):
     habit = models.ForeignKey(Habit, on_delete=models.CASCADE)
     date = models.DateField(default=timezone.now)
@@ -73,6 +103,26 @@ class Goal(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.title}"
+
+    @property
+    def progress(self):
+        """Calculates progress percentage based on time elapsed"""
+        if not self.deadline:
+            return 0
+        now = timezone.now().date()
+        start = self.created_at.date()
+        end = self.deadline
+        total_days = (end - start).days
+        if total_days <= 0: return 100
+        elapsed = (now - start).days
+        return max(0, min(100, int((elapsed / total_days) * 100)))
+
+    @property
+    def days_remaining(self):
+        """Returns days remaining until deadline"""
+        if not self.deadline:
+            return None
+        return (self.deadline - timezone.now().date()).days
 
 class Feedback(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
