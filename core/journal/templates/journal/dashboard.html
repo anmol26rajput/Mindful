@@ -5,7 +5,7 @@
 <div class="row mb-4 fade-in">
     <div class="col-12 d-flex align-items-center justify-content-between">
         <div>
-            <h1 class="display-3 fw-bold serif mb-1">
+            <h1 class="display-3 fw-light mb-1" style="font-family: 'Cormorant Garamond', serif; letter-spacing: -1px;">
                 {% if view_date == today %}
                 {{ greeting }}
                 {% else %}
@@ -296,6 +296,8 @@
 {{ sleep_data|json_script:"sleep-data" }}
 {{ habit_completion_counts|json_script:"habit-counts" }}
 {{ habit_dates|json_script:"habit-dates" }}
+{{ active_goals_count|default:0|json_script:"active-goals-data" }}
+{{ completed_goals_count|default:0|json_script:"completed-goals-data" }}
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
@@ -376,37 +378,36 @@
 
         // 3. Goal Progress Chart
         const goalCtx = document.getElementById('goalBarChart').getContext('2d');
-        const activeGoals = {{ active_goals_count }
-    };
-    const completedGoals = {{ completed_goals_count }};
+        const activeGoals = JSON.parse(document.getElementById('active-goals-data').textContent);
+        const completedGoals = JSON.parse(document.getElementById('completed-goals-data').textContent);
 
-    new Chart(goalCtx, {
-        type: 'bar', // Using bar for clear comparison
-        data: {
-            labels: ['Active', 'Completed'],
-            datasets: [{
-                data: [activeGoals, completedGoals],
-                backgroundColor: ['#e0836d', '#4a90e2'], // Warm orange for active, Blue for completed
-                borderRadius: 4,
-                barPercentage: 0.6
-            }]
-        },
-        options: {
-            indexAxis: 'y', // Horizontal bars for better readability in small space
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
-            scales: {
-                x: { display: false, grid: { display: false }, max: Math.max(activeGoals, completedGoals, 5) },
-                y: {
-                    grid: { display: false },
-                    ticks: {
-                        color: textColor // Apply dynamic color
+        new Chart(goalCtx, {
+            type: 'bar', // Using bar for clear comparison
+            data: {
+                labels: ['Active', 'Completed'],
+                datasets: [{
+                    data: [activeGoals, completedGoals],
+                    backgroundColor: ['#e0836d', '#4a90e2'], // Warm orange for active, Blue for completed
+                    borderRadius: 4,
+                    barPercentage: 0.6
+                }]
+            },
+            options: {
+                indexAxis: 'y', // Horizontal bars for better readability in small space
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { display: false, grid: { display: false }, max: Math.max(activeGoals, completedGoals, 5) },
+                    y: {
+                        grid: { display: false },
+                        ticks: {
+                            color: textColor // Apply dynamic color
+                        }
                     }
                 }
             }
-        }
-    });
+        });
     });
 </script>
 {% endblock %}
