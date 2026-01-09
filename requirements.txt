@@ -1,0 +1,7 @@
+Django==5.1.4
+psycopg2-binary==2.9.10
+gunicorn==23.0.0
+whitenoise==6.7.0
+django-crispy-forms==2.5
+crispy-bootstrap5==2024.10
+python-dotenv==1.0.1
