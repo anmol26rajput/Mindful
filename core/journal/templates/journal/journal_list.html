@@ -1,0 +1,58 @@
+{% extends 'journal/base.html' %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<div class="row mb-5 align-items-end">
+    <div class="col-md-8">
+        <h1 class="display-4 fw-bold serif mb-2">My Journal</h1>
+        <p class="text-muted fs-5">Reflect on your journey, day by day</p>
+    </div>
+    <div class="col-md-4">
+        <!-- Date Filter -->
+        <!-- Date Filter -->
+        <form method="get" class="d-flex justify-content-md-end gap-2">
+            <input type="date" name="date" class="form-control" value="{{ request.GET.date }}" max="{% now 'Y-m-d' %}"
+                onchange="this.form.submit()"
+                style="max-width: 160px; background: rgba(255,255,255,0.1); color: var(--text-main); border: 1px solid var(--border-color);">
+            {% if request.GET.date %}
+            <a href="{% url 'journal_list' %}" class="btn btn-outline-secondary">Clear</a>
+            {% endif %}
+        </form>
+    </div>
+</div>
+
+<div class="custom-scroll" style="max-height: 70vh; overflow-y: auto; padding-right: 5px;">
+    <div class="row g-4">
+        {% for entry in entries %}
+        <div class="col-12">
+            <div class="glass-panel-premium p-4">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="badge bg-light text-black rounded-pill">{{ entry.date|date:"D" }}</span>
+                        <h4 class="serif m-0">{{ entry.date|date:"F j, Y" }}</h4>
+                    </div>
+                    <div class="text-end">
+                        <small class="text-muted d-block">Sleep</small>
+                        <span class="fw-bold">{{ entry.sleep_hours }}h</span>
+                    </div>
+                </div>
+
+                <div class="p-3 rounded-3" style="background: rgba(0,0,0,0.1);">
+                    <span style="color: #ffc107; font-size: 1.5rem; line-height: 0;">❝</span>
+                    <p class="mb-0 mt-2 fst-italic lh-lg">{{ entry.gratitude }}</p>
+                    <div class="text-end mt-2">
+                        <span style="color: #ffc107; font-size: 1.5rem; line-height: 0;">❞</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="text-center py-5 glass-panel-premium">
+                <p class="text-muted">No entries found for this period.</p>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

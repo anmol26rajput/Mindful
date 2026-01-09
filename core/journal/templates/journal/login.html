@@ -1,0 +1,76 @@
+{% extends 'journal/base.html' %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<div class="row min-vh-100 align-items-center justify-content-center" style="margin-top: -100px;">
+    <div class="col-md-5 col-lg-4">
+        <div class="glass-panel-premium p-5 text-center">
+            <div class="mb-4">
+                <span class="d-inline-block border border-2 border-light rounded-3 p-2 mb-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                        style="color: var(--accent-primary);">
+                        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                    </svg>
+                </span>
+                <h2 class="serif fw-bold mb-1">Welcome Back</h2>
+                <p class="text-muted small">Continue your journey</p>
+            </div>
+
+            <form method="post" class="text-start">
+                {% csrf_token %}
+                {{ form|crispy }}
+
+                <div class="d-grid mt-4">
+                    <button type="submit" class="btn btn-primary rounded-pill py-3">Login</button>
+                </div>
+            </form>
+
+            <div class="mt-4 text-center">
+                <p class="small text-muted mb-0">Don't have an account? <a href="{% url 'register' %}"
+                        class="text-decoration-none fw-bold" style="color: var(--accent-primary);">Sign up</a></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Toggle Password Visibility
+        const passwordFields = document.querySelectorAll('input[type="password"]');
+        passwordFields.forEach(field => {
+            // Logic to be refined if needed, using crispy text-muted helper if possible
+            // Re-implementing the eye icon injection specifically for this new layout
+            const wrapper = document.createElement('div');
+            wrapper.className = 'position-relative';
+            field.parentNode.insertBefore(wrapper, field);
+            wrapper.appendChild(field);
+
+            const toggleBtn = document.createElement('button');
+            toggleBtn.type = 'button';
+            toggleBtn.className = 'btn btn-link position-absolute end-0 top-50 translate-middle-y text-muted text-decoration-none';
+            toggleBtn.style.zIndex = '10';
+            toggleBtn.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+            `;
+
+            wrapper.appendChild(toggleBtn);
+
+            toggleBtn.addEventListener('click', function () {
+                if (field.type === 'password') {
+                    field.type = 'text';
+                    toggleBtn.innerHTML = `
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M1 1l22 22"></path><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+                    `;
+                } else {
+                    field.type = 'password';
+                    toggleBtn.innerHTML = `
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                    `;
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}
