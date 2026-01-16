@@ -70,7 +70,7 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 DATABASES = {
     'default': dj_database_url.parse(
         DATABASE_URL,
-        conn_max_age=0,   # IMPORTANT for CodeSandbox
+        conn_max_age=0,
     )
 }
 DATABASES['default']['OPTIONS'] = {
@@ -81,7 +81,6 @@ DATABASES['default']['OPTIONS'] = {
     'keepalives_interval': 10,
     'keepalives_count': 5,
 }
-
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
     {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
