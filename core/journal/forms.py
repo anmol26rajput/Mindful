@@ -1,4 +1,6 @@
 from django import forms
+from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.models import User
 from .models import DailyEntry, UserProfile, OnboardingResponse, Habit, Feedback, Goal
 
 class EntryForm(forms.ModelForm):
@@ -53,3 +55,29 @@ class GoalForm(forms.ModelForm):
             'message': forms.Textarea(attrs={'rows': 4, 'placeholder': 'Tell us what you think...'}),
             'rating': forms.HiddenInput(),
         }
+
+class CustomUserCreationForm(UserCreationForm):
+    email = forms.EmailField(required=True, help_text='') # Remove help text here
+
+    class Meta:
+        model = User
+        fields = ['username', 'email'] # Explicit order
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Remove help text from all fields
+        for field_name in self.fields:
+            self.fields[field_name].help_text = None
+        
+        # Ensure Email is second (though Meta.fields usually handles this, we can enforce)
+        self.fields['email'].widget.attrs.update({'placeholder': 'Email Address'})
+        self.fields['username'].widget.attrs.update({'placeholder': 'Username'})
+
+class OTPForm(forms.Form):
+    code = forms.CharField(max_length=6, min_length=6, widget=forms.TextInput(attrs={
+        'placeholder': 'Enter 6-digit code',
+        'class': 'form-control text-center text-spacing-4 fs-4',
+        'autocomplete': 'off',
+        'pattern': '[0-9]*',
+        'inputmode': 'numeric'
+    }))

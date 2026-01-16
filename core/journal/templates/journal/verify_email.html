@@ -1,0 +1,30 @@
+{% extends 'journal/base.html' %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<div class="row justify-content-center fade-in">
+    <div class="col-md-6 col-lg-5">
+        <div class="glass-panel-premium p-5 text-center">
+            <h2 class="serif mb-4">Verify Your Email 📧</h2>
+            <p class="text-muted mb-4">We've sent a 6-digit verification code to your email. Please enter it below to
+                activate your account.</p>
+
+            <form method="post" class="text-start">
+                {% csrf_token %}
+                <div class="mb-4">
+                    {{ form.code|as_crispy_field }}
+                </div>
+
+                <div class="d-grid mb-3">
+                    <button type="submit" class="btn btn-primary rounded-pill py-2 fw-bold">Verify Account</button>
+                </div>
+            </form>
+
+            <p class="small text-muted mt-3">
+                Didn't receive the code? Check your spam folder or <a href="{% url 'register' %}"
+                    class="text-decoration-none" style="color: var(--accent-primary);">try registering again</a>.
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

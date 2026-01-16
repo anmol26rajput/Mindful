@@ -1,4 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from rest_framework.decorators import api_view
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib import messages
@@ -11,21 +12,84 @@ from datetime import datetime, timedelta
 from django.urls import reverse
 from django.http import HttpResponseRedirect
 
+from django.core.mail import send_mail
+from django.conf import settings
+import random
+from .models import EmailVerification
+from .forms import CustomUserCreationForm, OTPForm
+
+@api_view(['GET', 'POST'])
 def register(request):
     if request.method == 'POST':
-        form = UserCreationForm(request.POST)
+        form = CustomUserCreationForm(request.POST)
         if form.is_valid():
-            user = form.save()
-            username = form.cleaned_data.get('username')
-            messages.success(request, f'Account created for {username}! Please set up your profile.')
-            from django.contrib.auth import login
-            login(request, user)
-            return redirect('profile_setup')
+            user = form.save(commit=False)
+            user.is_active = False  # Deactivate until verified
+            user.save()
+            
+            # Generate OTP
+            code = f"{random.randint(100000, 999999)}"
+            EmailVerification.objects.update_or_create(
+                user=user,
+                defaults={'code': code}
+            )
+            
+            # Send Email
+            send_mail(
+                'Verify your email - Mindful Tracker',
+                f'Your verification code is: {code}',
+                settings.DEFAULT_FROM_EMAIL,
+                [user.email],
+                fail_silently=False,
+            )
+            
+            request.session['verification_user_id'] = user.id
+            messages.info(request, f'Verification code sent to {user.email}')
+            return redirect('verify_email')
     else:
         form = UserCreationForm()
     return render(request, 'journal/register.html', {'form': form})
 
+from .forms import OTPForm
+
+@api_view(['GET', 'POST'])
+def verify_email(request):
+    user_id = request.session.get('verification_user_id')
+    if not user_id:
+        return redirect('register')
+        
+    if request.method == 'POST':
+        form = OTPForm(request.POST)
+        if form.is_valid():
+            code = form.cleaned_data['code']
+            try:
+                verification = EmailVerification.objects.get(user_id=user_id)
+                if verification.code == code and not verification.is_expired():
+                    # Success
+                    user = User.objects.get(id=user_id)
+                    user.is_active = True
+                    user.save()
+                    verification.delete() # Cleanup
+                    
+                    # Login and redirect
+                    from django.contrib.auth import login
+                    login(request, user)
+                    del request.session['verification_user_id']
+                    
+                    messages.success(request, 'Email verified! Welcome.')
+                    return redirect('profile_setup')
+                else:
+                    messages.error(request, 'Invalid or expired code.')
+            except EmailVerification.DoesNotExist:
+                messages.error(request, 'Verification session invalid.')
+                
+    else:
+        form = OTPForm()
+        
+    return render(request, 'journal/verify_email.html', {'form': form})
+
 @login_required
+@api_view(['GET', 'POST'])
 def profile_setup(request):
     try:
         profile = request.user.userprofile
@@ -44,6 +108,7 @@ def profile_setup(request):
     return render(request, 'journal/profile_form.html', {'form': form})
 
 @login_required
+@api_view(['GET', 'POST'])
 def profile_overview(request):
     profile, created = UserProfile.objects.get_or_create(user=request.user)
     try:
@@ -70,6 +135,7 @@ def profile_overview(request):
     })
 
 @login_required
+@api_view(['GET', 'POST'])
 def quiz_setup(request):
     if request.method == 'POST':
         form = OnboardingForm(request.POST)
@@ -84,21 +150,30 @@ def quiz_setup(request):
     return render(request, 'journal/quiz_form.html', {'form': form})
 
 @login_required
+# --- Helper Functions for Habits ---
+def _handle_habit_post(request):
+    if 'new_habit' in request.POST:
+        form = HabitForm(request.POST)
+        if form.is_valid():
+            habit = form.save(commit=False)
+            habit.user = request.user
+            habit.save()
+            messages.success(request, "Habit created!")
+            return redirect('habits_list')
+    elif 'delete_habit' in request.POST:
+        habit_id = request.POST.get('habit_id')
+        Habit.objects.filter(id=habit_id, user=request.user).delete()
+        messages.success(request, "Habit deleted.")
+        return redirect('habits_list')
+    return None
+
+@login_required
+@api_view(['GET', 'POST'])
 def habits_list(request):
     if request.method == 'POST':
-        if 'new_habit' in request.POST:
-            form = HabitForm(request.POST)
-            if form.is_valid():
-                habit = form.save(commit=False)
-                habit.user = request.user
-                habit.save()
-                messages.success(request, "Habit created!")
-                return redirect('habits_list')
-        elif 'delete_habit' in request.POST:
-            habit_id = request.POST.get('habit_id')
-            Habit.objects.filter(id=habit_id, user=request.user).delete()
-            messages.success(request, "Habit deleted.")
-            return redirect('habits_list')
+        response = _handle_habit_post(request)
+        if response:
+            return response
 
     habits = Habit.objects.filter(user=request.user)
     form = HabitForm()
@@ -109,6 +184,29 @@ def habits_list(request):
     })
 
 @login_required
+# --- Helper Functions for Sleep Tracker ---
+def _calculate_sleep_stats(entries):
+    sleep_data = [entry.sleep_hours for entry in entries]
+    
+    # Avg Hours
+    avg_hours = sum(sleep_data) / len(sleep_data) if sleep_data else 0
+    avg_hours = round(avg_hours, 1)
+
+    # Avg Quality (Heuristic)
+    quality_sum = 0
+    for hours in sleep_data:
+        if hours >= 8: score = 5
+        elif hours >= 7: score = 4
+        elif hours >= 6: score = 3
+        elif hours >= 5: score = 2
+        else: score = 1
+        quality_sum += score
+    
+    avg_quality = round(quality_sum / len(sleep_data), 1) if sleep_data else 0
+    return sleep_data, avg_hours, avg_quality
+
+@login_required
+@api_view(['GET', 'POST'])
 def sleep_tracker(request):
     if request.method == 'POST':
         form = EntryForm(request.POST)
@@ -128,28 +226,8 @@ def sleep_tracker(request):
     # Data for graph
     entries = DailyEntry.objects.filter(user=request.user).order_by('date')
     dates = [entry.date.strftime("%b %d") for entry in entries]
-    sleep_data = [entry.sleep_hours for entry in entries]
     
-    # Calculate Avg Hours
-    avg_hours = sum(sleep_data) / len(sleep_data) if sleep_data else 0
-    avg_hours = round(avg_hours, 1)
-
-    # Calculate Avg Quality (Heuristic: 8h is optimal 5/5)
-    quality_sum = 0
-    for hours in sleep_data:
-        if hours >= 8:
-            score = 5
-        elif hours >= 7:
-            score = 4
-        elif hours >= 6:
-            score = 3
-        elif hours >= 5:
-            score = 2
-        else:
-            score = 1
-        quality_sum += score
-    
-    avg_quality = round(quality_sum / len(sleep_data), 1) if sleep_data else 0
+    sleep_data, avg_hours, avg_quality = _calculate_sleep_stats(entries)
 
     form = EntryForm()
     return render(request, 'journal/sleep.html', {
@@ -161,6 +239,7 @@ def sleep_tracker(request):
     })
 
 @login_required
+@api_view(['GET'])
 def journal_list(request):
     entries = DailyEntry.objects.filter(user=request.user).order_by('-date')
     
@@ -176,27 +255,36 @@ def journal_list(request):
 
 
 @login_required
+# --- Helper Functions for Goals ---
+def _handle_goal_post(request):
+    if 'new_goal' in request.POST:
+        form = GoalForm(request.POST)
+        if form.is_valid():
+            goal = form.save(commit=False)
+            goal.user = request.user
+            goal.save()
+            messages.success(request, "Goal set!")
+            return redirect('goals_tracker')
+    elif 'toggle_goal' in request.POST:
+        goal_id = request.POST.get('goal_id')
+        goal = get_object_or_404(Goal, id=goal_id, user=request.user)
+        goal.is_completed = not goal.is_completed
+        goal.save()
+        return redirect('goals_tracker')
+    elif 'delete_goal' in request.POST:
+        goal_id = request.POST.get('goal_id')
+        Goal.objects.filter(id=goal_id, user=request.user).delete()
+        messages.success(request, "Goal deleted.")
+        return redirect('goals_tracker')
+    return None
+
+@login_required
+@api_view(['GET', 'POST'])
 def goals_tracker(request):
     if request.method == 'POST':
-        if 'new_goal' in request.POST:
-            form = GoalForm(request.POST)
-            if form.is_valid():
-                goal = form.save(commit=False)
-                goal.user = request.user
-                goal.save()
-                messages.success(request, "Goal set!")
-                return redirect('goals_tracker')
-        elif 'toggle_goal' in request.POST:
-            goal_id = request.POST.get('goal_id')
-            goal = get_object_or_404(Goal, id=goal_id, user=request.user)
-            goal.is_completed = not goal.is_completed
-            goal.save()
-            return redirect('goals_tracker')
-        elif 'delete_goal' in request.POST:
-            goal_id = request.POST.get('goal_id')
-            Goal.objects.filter(id=goal_id, user=request.user).delete()
-            messages.success(request, "Goal deleted.")
-            return redirect('goals_tracker')
+        response = _handle_goal_post(request)
+        if response:
+            return response
 
     active_goals = Goal.objects.filter(user=request.user, is_completed=False)
     completed_goals = Goal.objects.filter(user=request.user, is_completed=True)
@@ -208,13 +296,10 @@ def goals_tracker(request):
         'form': form
     })
 
-@login_required
-def dashboard(request):
-    # Ensure profile exists, else redirect (basic enforcement)
-    if not hasattr(request.user, 'userprofile'):
-        return redirect('profile_setup')
+# --- Helper Functions for Dashboard Refactoring ---
 
-    # 1. Determine Date (GET or POST)
+def _get_dashboard_date(request):
+    """Determines and validates the view date."""
     today = timezone.now().date()
     view_date_str = request.GET.get('date') or request.POST.get('date')
     
@@ -230,137 +315,95 @@ def dashboard(request):
     if view_date > today:
         messages.warning(request, "You cannot log entries for future dates.")
         view_date = today
-
-    # Check if entry exists for view_date
-    day_entry = DailyEntry.objects.filter(user=request.user, date=view_date).first()
-    
-    # Initialize forms
-    form = EntryForm(instance=day_entry)
-    habit_form = HabitForm()
-
-    if request.method == 'POST':
-        # Preserve date in redirect to stay on same day
-        redirect_url = f"{reverse('dashboard')}?date={view_date.strftime('%Y-%m-%d')}"
         
-        if 'log_entry' in request.POST:
-            form = EntryForm(request.POST, instance=day_entry)
-            if form.is_valid():
-                entry = form.save(commit=False)
-                entry.user = request.user
-                entry.date = view_date # Ensure entry is for view_date
-                entry.save()
-                messages.success(request, "Entry saved successfully!")
-                return HttpResponseRedirect(redirect_url)
-                
-        elif 'add_habit' in request.POST:
-            habit_form = HabitForm(request.POST)
-            if habit_form.is_valid():
-                habit = habit_form.save(commit=False)
-                habit.user = request.user
-                habit.save()
-                messages.success(request, "New habit added!")
-                return HttpResponseRedirect(redirect_url)
-                
-        elif 'toggle_habit' in request.POST:
-            habit_id = request.POST.get('toggle_habit')
-            habit = get_object_or_404(Habit, id=habit_id, user=request.user)
-            # Toggle for view_date
-            completion, created = HabitCompletion.objects.get_or_create(habit=habit, date=view_date)
-            if not created:
-                completion.delete()
+    return view_date, today
+
+def _handle_dashboard_post(request, view_date, day_entry):
+    """Handles all POST actions for the dashboard."""
+    redirect_url = f"{reverse('dashboard')}?date={view_date.strftime('%Y-%m-%d')}"
+    
+    if 'log_entry' in request.POST:
+        form = EntryForm(request.POST, instance=day_entry)
+        if form.is_valid():
+            entry = form.save(commit=False)
+            entry.user = request.user
+            entry.date = view_date
+            entry.save()
+            messages.success(request, "Entry saved successfully!")
             return HttpResponseRedirect(redirect_url)
             
-        elif 'toggle_goal' in request.POST:
-            goal_id = request.POST.get('goal_id')
-            goal = get_object_or_404(Goal, id=goal_id, user=request.user)
-            goal.is_completed = not goal.is_completed
-            goal.save()
+    elif 'add_habit' in request.POST:
+        habit_form = HabitForm(request.POST)
+        if habit_form.is_valid():
+            habit = habit_form.save(commit=False)
+            habit.user = request.user
+            habit.save()
+            messages.success(request, "New habit added!")
             return HttpResponseRedirect(redirect_url)
-
-    # Greeting logic
-    current_hour = datetime.now().hour
-    if current_hour < 12:
-        greeting = "Good morning"
-    elif current_hour < 18:
-        greeting = "Good afternoon"
-    else:
-        greeting = "Good evening"
+            
+    elif 'toggle_habit' in request.POST:
+        habit_id = request.POST.get('toggle_habit')
+        habit = get_object_or_404(Habit, id=habit_id, user=request.user)
+        completion, created = HabitCompletion.objects.get_or_create(habit=habit, date=view_date)
+        if not created:
+            completion.delete()
+        return HttpResponseRedirect(redirect_url)
         
-    # Fetch data for charts/history (Global history, unaffected by view_date usually, or maybe we want history UP TO view_date?)
-    # Usually dashboard graphs show recent history ending at today. Let's keep graphs as "Recent History" (last 7-30 days from TODAY).
-    entries_history = DailyEntry.objects.filter(user=request.user).order_by('date')
+    elif 'toggle_goal' in request.POST:
+        goal_id = request.POST.get('goal_id')
+        goal = get_object_or_404(Goal, id=goal_id, user=request.user)
+        goal.is_completed = not goal.is_completed
+        goal.save()
+        return HttpResponseRedirect(redirect_url)
+        
+    return None
+
+def _get_dashboard_context(request, view_date, today, day_entry):
+    """Aggregates all data for the dashboard context."""
+    user = request.user
     
-    # Prepare Chart Data (Sleep/Mood history stays general)
-    dates = [e.date.strftime("%Y-%m-%d") for e in entries_history]
-    sleep_data = [e.sleep_hours for e in entries_history]
+    # 1. Forms
+    form = EntryForm(instance=day_entry)
+    habit_form = HabitForm()
     
-    # Habit logic (Active habits are constant, but completion shown is for view_date)
-    active_habits = Habit.objects.filter(user=request.user, is_active=True)
+    # 2. Daily Data
+    active_habits = Habit.objects.filter(user=user, is_active=True)
     habit_data = []
     for habit in active_habits:
         is_completed = HabitCompletion.objects.filter(habit=habit, date=view_date).exists()
-        habit_data.append({
-            'habit': habit,
-            'completed': is_completed
-        })
-
-    # Consistency & Streak (These metrics are usually "Current Status", i.e., relative to TODAY)
-    # However, if user goes back in time, consistency score could be "Consistency up to that month".
-    # Let's keep Consistency/Streak as GLOBAL metrics for simplicity unless requested otherwise.
-    
-    # ... (Keep existing Calendar/Streak/Counts logic mostly same, based on 'today' or global)
-    
-    # Calendar Logic (Current Month of view_date) - optional: show calendar for the VIEWED month?
-    # User might want to browse months. For now, let's keep it based on view_date's month.
-    cal = calendar.Calendar()
-    current_year = view_date.year
-    current_month = view_date.month
-    month_days = cal.monthdayscalendar(current_year, current_month)
-    
-    month_completions = HabitCompletion.objects.filter(
-        habit__user=request.user, 
-        date__year=current_year, 
-        date__month=current_month
-    ).values_list('date', flat=True)
-    
-    active_days = set(month_completions)
-    active_day_numbers = {d.day for d in active_days}
-
-    # Calculate Habit Consistency (Global mainly, or monthly?)
-    active_habits_count = active_habits.count()
-    if active_habits_count > 0:
-        # Or if viewing past month? 
-        # Let's simple use global 30 day consistency for the widget?
-        # The widget says "Last 30 days". Let's stick to that.
-        pass # Logic handled below or reused
+        habit_data.append({'habit': habit, 'completed': is_completed})
         
+    daily_goals = Goal.objects.filter(user=user, created_at__date=view_date).order_by('id')
+    active_goals_count = Goal.objects.filter(user=user, created_at__date=view_date, is_completed=False).count()
+    completed_goals_count = Goal.objects.filter(user=user, created_at__date=view_date, is_completed=True).count()
+    
+    # 3. History & Charts (Last 7-30 days)
+    entries_history = DailyEntry.objects.filter(user=user).order_by('date')
+    dates = [e.date.strftime("%Y-%m-%d") for e in entries_history]
+    sleep_data = [e.sleep_hours for e in entries_history]
+    
+    # 4. Consistency & Streak
     start_30_days_ago = today - timedelta(days=30)
+    
+    # Habit Consistency
+    active_habits_count = active_habits.count()
     consistency_completions = HabitCompletion.objects.filter(
-        habit__user=request.user,
-        date__gte=start_30_days_ago,
-        date__lte=today
+        habit__user=user, date__gte=start_30_days_ago, date__lte=today
     ).count()
     possible_completions_30d = active_habits_count * 30
     consistency_score = round((consistency_completions / possible_completions_30d) * 100, 1) if possible_completions_30d > 0 else 0
-
-    # Goal Consistency (Last 30 Days)
+    
+    # Goal Consistency
     total_goals_30d = Goal.objects.filter(
-        user=request.user,
-        created_at__date__gte=start_30_days_ago,
-        created_at__date__lte=today
+        user=user, created_at__date__gte=start_30_days_ago, created_at__date__lte=today
     ).count()
-    
-    completed_goals_30d_count = Goal.objects.filter(
-        user=request.user,
-        created_at__date__gte=start_30_days_ago,
-        created_at__date__lte=today,
-        is_completed=True
+    completed_goals_30d = Goal.objects.filter(
+        user=user, created_at__date__gte=start_30_days_ago, created_at__date__lte=today, is_completed=True
     ).count()
-    
-    goal_consistency_score = round((completed_goals_30d_count / total_goals_30d) * 100, 1) if total_goals_30d > 0 else 0
+    goal_consistency_score = round((completed_goals_30d / total_goals_30d) * 100, 1) if total_goals_30d > 0 else 0
 
-    # Streak Calculation (Global, relative to today)
-    completion_dates = sorted(list(set(HabitCompletion.objects.filter(habit__user=request.user, habit__is_active=True).values_list('date', flat=True))), reverse=True)
+    # Streak
+    completion_dates = sorted(list(set(HabitCompletion.objects.filter(habit__user=user, habit__is_active=True).values_list('date', flat=True))), reverse=True)
     current_streak = 0
     if completion_dates:
         latest_date = completion_dates[0]
@@ -374,39 +417,37 @@ def dashboard(request):
                 else:
                     break
 
-    # Counts
-    journal_count = entries_history.count()
-    # Goals (Daily Scope for List)
-    daily_goals = Goal.objects.filter(user=request.user, created_at__date=view_date).order_by('id')
+    # 5. Month Calendar Logic
+    cal = calendar.Calendar()
+    current_year = view_date.year
+    current_month = view_date.month
+    month_days = cal.monthdayscalendar(current_year, current_month)
     
-    # Global Counts for Charts (or we could make these daily too, but let's stick to global for "Goal Progress" chart context unless specified)
-    # Actually, usually "Goal Progress" on a dashboard might be "Tasks left today".
-    # But let's assume global counts for the chart for now to avoid breaking it, OR just used the daily counts?
-    # Daily Goal Progress for Chart
-    active_goals_count = Goal.objects.filter(user=request.user, created_at__date=view_date, is_completed=False).count()
-    completed_goals_count = Goal.objects.filter(user=request.user, created_at__date=view_date, is_completed=True).count()
-
-    # Graph Data (Daily Completions for Month of View Date)
+    month_completions = HabitCompletion.objects.filter(
+        habit__user=user, date__year=current_year, date__month=current_month
+    ).values_list('date', flat=True)
+    active_days = set(month_completions)
+    active_day_numbers = {d.day for d in active_days}
+    
+    # Graph Data (Daily Completions for Month)
     from collections import Counter
     daily_counts = Counter(month_completions)
-    
     habit_dates = []
     habit_completion_counts = []
     
-    # Show graph for the whole month of the view_date
     import calendar as cal_module
     _, num_days_in_month = cal_module.monthrange(current_year, current_month)
-    
     for i in range(1, num_days_in_month + 1):
         d = view_date.replace(day=i)
-        # Don't show future days in graph if viewing current month
-        if d > today:
-            break
-        d_str = d.strftime("%Y-%m-%d")
-        habit_dates.append(d_str)
+        if d > today: break
+        habit_dates.append(d.strftime("%Y-%m-%d"))
         habit_completion_counts.append(daily_counts[d])
+        
+    # Greeting
+    current_hour = datetime.now().hour
+    greeting = "Good morning" if current_hour < 12 else "Good afternoon" if current_hour < 18 else "Good evening"
 
-    context = {
+    return {
         'form': form,
         'habit_form': habit_form,
         'entries': entries_history.reverse()[:7], 
@@ -415,7 +456,7 @@ def dashboard(request):
         'habit_data': habit_data,
         'daily_goals': daily_goals,
         'active_goals_count': active_goals_count,
-        'completed_goals_count': Goal.objects.filter(user=request.user, is_completed=True).count(),
+        'completed_goals_count': Goal.objects.filter(user=user, is_completed=True).count(),
         'consistency_score': consistency_score,
         'goal_consistency_score': goal_consistency_score,
         'current_streak': current_streak,
@@ -424,14 +465,32 @@ def dashboard(request):
         'active_day_numbers': active_day_numbers,
         'habit_dates': habit_dates,
         'habit_completion_counts': habit_completion_counts,
-        'view_date': view_date, # Pass view_date to template
+        'view_date': view_date,
         'today': today,
         'greeting': greeting,
         'current_month_name': today.strftime('%B %Y')
     }
+
+@login_required
+@api_view(['GET', 'POST'])
+def dashboard(request):
+    # Ensure profile exists
+    if not hasattr(request.user, 'userprofile'):
+        return redirect('profile_setup')
+
+    view_date, today = _get_dashboard_date(request)
+    day_entry = DailyEntry.objects.filter(user=request.user, date=view_date).first()
+
+    if request.method == 'POST':
+        response = _handle_dashboard_post(request, view_date, day_entry)
+        if response:
+            return response
+
+    context = _get_dashboard_context(request, view_date, today, day_entry)
     return render(request, 'journal/dashboard.html', context)
 
 @login_required
+@api_view(['POST'])
 def submit_feedback(request):
     if request.method == 'POST':
         form = FeedbackForm(request.POST)
