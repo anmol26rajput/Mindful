@@ -76,13 +76,14 @@
 
             <div class="d-flex flex-column gap-2 custom-scroll" style="max-height: 300px; overflow-y: auto;">
                 {% for item in habit_data %}
-                <div class="d-flex align-items-center gap-3 p-3 rounded-3 habit-card"
-                    style="background: rgba(138, 191, 158, 0.15); transition: transform 0.2s;">
-                    <form method="post" class="m-0 d-flex align-items-center w-100">
+                <div class="habit-card">
+                    <form method="post" class="m-0 w-100">
                         {% csrf_token %}
                         <input type="hidden" name="toggle_habit" value="{{ item.habit.id }}">
                         <input type="hidden" name="date" value="{{ view_date|date:'Y-m-d' }}">
-                        <button type="submit" class="btn p-0 border-0 d-flex align-items-center gap-3 text-start w-100">
+                        <button type="submit"
+                            class="btn border-0 d-flex align-items-center gap-3 text-start w-100 p-3 rounded-3 hover-lift"
+                            style="background: rgba(138, 191, 158, 0.15); transition: transform 0.2s;">
                             {% if item.completed %}
                             <div class="rounded-circle d-flex align-items-center justify-content-center text-white"
                                 style="width: 24px; height: 24px; background: var(--accent-primary);">
@@ -118,13 +119,14 @@
 
             <div class="d-flex flex-column gap-2" style="max-height: 300px; overflow-y: auto;">
                 {% for goal in daily_goals %}
-                <div class="d-flex align-items-center gap-3 p-3 rounded-3 goal-card"
-                    style="background: rgba(224, 131, 109, 0.15); transition: transform 0.2s;">
-                    <form method="post" class="m-0 d-flex align-items-center w-100">
+                <div class="goal-card">
+                    <form method="post" class="m-0 w-100">
                         {% csrf_token %}
                         <input type="hidden" name="toggle_goal" value="1">
                         <input type="hidden" name="goal_id" value="{{ goal.id }}">
-                        <button type="submit" class="btn p-0 border-0 d-flex align-items-center gap-3 text-start w-100">
+                        <button type="submit"
+                            class="btn border-0 d-flex align-items-center gap-3 text-start w-100 p-3 rounded-3 hover-lift"
+                            style="background: rgba(224, 131, 109, 0.15); transition: transform 0.2s;">
                             {% if goal.is_completed %}
                             <div class="rounded-circle d-flex align-items-center justify-content-center text-white"
                                 style="width: 24px; height: 24px; background: #e0836d;">
