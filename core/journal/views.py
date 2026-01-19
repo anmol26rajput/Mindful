@@ -53,7 +53,7 @@ def register(request):
             messages.info(request, f'Verification code sent to {user.email}')
             return redirect('verify_email')
     else:
-        form = UserCreationForm()
+        form = CustomUserCreationForm()
     return render(request, 'journal/register.html', {'form': form})
 
 from .forms import OTPForm

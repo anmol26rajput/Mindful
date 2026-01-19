@@ -70,8 +70,27 @@ class CustomUserCreationForm(UserCreationForm):
             self.fields[field_name].help_text = None
         
         # Ensure Email is second (though Meta.fields usually handles this, we can enforce)
-        self.fields['email'].widget.attrs.update({'placeholder': 'Email Address'})
-        self.fields['username'].widget.attrs.update({'placeholder': 'Username'})
+        # Custom styling
+        self.fields['email'].widget.attrs.update({
+            'placeholder': 'Email Address',
+            'class': 'form-control ps-3 py-2 border-0',
+            'style': 'background-color: rgba(255, 255, 255, 0.05); color: var(--text-main);'
+        })
+        self.fields['username'].widget.attrs.update({
+            'placeholder': 'Username',
+            'class': 'form-control ps-3 py-2 border-0',
+            'style': 'background-color: rgba(255, 255, 255, 0.05); color: var(--text-main);'
+        })
+        # Add style to password fields as well (inherited from UserCreationForm)
+        # Add style and placeholder to password fields as well (inherited from UserCreationForm)
+        for field_name in self.fields:
+             if field_name not in ['email', 'username']:
+                label = self.fields[field_name].label
+                self.fields[field_name].widget.attrs.update({
+                    'placeholder': label,
+                    'class': 'form-control ps-3 py-2 border-0',
+                    'style': 'background-color: rgba(255, 255, 255, 0.05); color: var(--text-main);'
+                })
 
 class OTPForm(forms.Form):
     code = forms.CharField(max_length=6, min_length=6, widget=forms.TextInput(attrs={
