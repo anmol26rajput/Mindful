@@ -15,35 +15,50 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
-            /* Light Theme */
-            --bg-body: #f8f9fa;
-            --bg-card: #ffffff;
-            --text-main: #2c3e50;
-            --text-muted: #6c757d;
-            --accent-primary: #8ABF9E;
-            /* Sage Green */
-            --accent-secondary: #E0E7E2;
-            --border-color: #e9ecef;
-            --glass-bg: rgba(255, 255, 255, 0.8);
-            --glass-border: rgba(255, 255, 255, 0.5);
+            /* Golden Sunrise Theme (Light/Default) */
+            --bg-body: #FDFBF7;
+            /* Warm cream */
+            --bg-gradient: linear-gradient(135deg, #FDFBF7 0%, #FFF5E6 100%);
+            --bg-card: rgba(255, 255, 255, 0.65);
+
+            --text-main: #4A4036;
+            /* Warm dark brown */
+            --text-muted: #8C8176;
+
+            --accent-primary: #D4A373;
+            /* Golden sand */
+            --accent-secondary: #FAEDCD;
+            /* Soft vanilla */
+            --accent-highlight: #E29578;
+            /* Muted coral/sunset */
+
+            --border-color: rgba(212, 163, 115, 0.2);
+            --glass-bg: rgba(255, 255, 255, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.4);
+            --shadow-soft: 0 8px 32px rgba(212, 163, 115, 0.1);
         }
 
         [data-theme="dark"] {
-            /* Dark Theme (SereneFlow) */
-            --bg-body: #1a1c1a;
-            /* Dark Matte Green/Black */
-            --bg-card: #242624;
-            --text-main: #e0e0e0;
-            --text-muted: #a0a0a0;
-            --accent-primary: #9BC6A8;
-            --accent-secondary: #2f332f;
-            --border-color: #333;
-            --glass-bg: rgba(36, 38, 36, 0.7);
+            /* Sunset Evening Theme */
+            --bg-body: #1E1C1A;
+            --bg-gradient: linear-gradient(135deg, #1E1C1A 0%, #2C241F 100%);
+            --bg-card: rgba(30, 28, 26, 0.7);
+
+            --text-main: #EAE0D5;
+            --text-muted: #A89F91;
+
+            --accent-primary: #D4A373;
+            --accent-secondary: #3E362E;
+            --accent-highlight: #E29578;
+
+            --border-color: rgba(212, 163, 115, 0.15);
+            --glass-bg: rgba(30, 28, 26, 0.7);
             --glass-border: rgba(255, 255, 255, 0.05);
+            --shadow-soft: 0 8px 32px rgba(0, 0, 0, 0.3);
         }
 
         body {
-            background-color: var(--bg-body);
+            background: var(--bg-gradient);
             color: var(--text-main);
             font-family: 'Inter', sans-serif;
             transition: background-color 0.3s ease, color 0.3s ease;
@@ -305,6 +320,7 @@
             </button>
 
             <div class="collapse navbar-collapse justify-content-between mt-3 mt-lg-0" id="navbarContent">
+                {% if request.resolver_match.url_name not in 'login,register,verify_email,landing' %}
                 <div class="d-flex flex-column flex-lg-row align-items-lg-center gap-2 gap-lg-3 py-2 py-lg-0">
                     <a href="{% url 'dashboard' %}"
                         class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">Dashboard</a>
@@ -317,9 +333,10 @@
                     <a href="{% url 'goals_tracker' %}"
                         class="nav-link {% if request.resolver_match.url_name == 'goals_tracker' %}active{% endif %}">Goals</a>
                 </div>
+                {% endif %}
 
                 <!-- Actions -->
-                <div class="d-flex align-items-center gap-3 pt-3 pt-lg-0 border-top border-lg-0 mt-2 mt-lg-0">
+                <div class="d-flex align-items-center gap-3 pt-3 pt-lg-0 border-lg-0 mt-2 mt-lg-0">
                     <!-- Theme Toggle -->
                     <div class="theme-toggle" id="themeToggle">
                         <svg id="sunIcon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
@@ -357,7 +374,6 @@
                         <button class="btn btn-sm btn-outline-primary rounded-pill" type="submit">Logout</button>
                     </form>
                     {% else %}
-                    <a href="{% url 'login' %}" class="btn btn-sm btn-primary">Login</a>
                     {% endif %}
                 </div>
             </div>

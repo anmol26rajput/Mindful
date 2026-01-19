@@ -18,6 +18,12 @@ import random
 from .models import EmailVerification
 from .forms import CustomUserCreationForm, OTPForm
 
+@api_view(['GET'])
+def landing(request):
+    if request.user.is_authenticated:
+        return redirect('dashboard')
+    return render(request, 'journal/landing.html')
+
 @api_view(['GET', 'POST'])
 def register(request):
     if request.method == 'POST':

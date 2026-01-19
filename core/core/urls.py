@@ -5,7 +5,8 @@ from journal import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', views.dashboard, name='dashboard'),
+    path('', views.landing, name='landing'),
+    path('dashboard/', views.dashboard, name='dashboard'),
     path('register/', views.register, name='register'),
     path('verify-email/', views.verify_email, name='verify_email'),
     path('profile/', views.profile_setup, name='profile_setup'),

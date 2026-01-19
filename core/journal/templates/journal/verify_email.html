@@ -1,29 +1,47 @@
 {% extends 'journal/base.html' %}
-{% load crispy_forms_tags %}
 
 {% block content %}
-<div class="row justify-content-center fade-in">
-    <div class="col-md-6 col-lg-5">
-        <div class="glass-panel-premium p-5 text-center">
-            <h2 class="serif mb-4">Verify Your Email 📧</h2>
-            <p class="text-muted mb-4">We've sent a 6-digit verification code to your email. Please enter it below to
-                activate your account.</p>
+<div class="row min-vh-100 align-items-center justify-content-center">
+    <div class="col-md-5 col-lg-4">
+        <div class="text-center mb-4 fade-in">
+            <div class="d-inline-flex align-items-center justify-content-center mb-3"
+                style="width: 60px; height: 60px; background: var(--accent-primary); border-radius: 50%;">
+                <span style="font-size: 1.8rem;">✉️</span>
+            </div>
+            <h2 class="serif fw-bold">Verify Email</h2>
+            <p class="text-muted small">We've sent a code to your email.</p>
+        </div>
 
-            <form method="post" class="text-start">
-                {% csrf_token %}
-                <div class="mb-4">
-                    {{ form.code|as_crispy_field }}
-                </div>
+        <div class="card glass-panel-premium p-4 shadow-soft">
+            <div class="card-body">
+                <form method="post" class="d-grid gap-3">
+                    {% csrf_token %}
 
-                <div class="d-grid mb-3">
-                    <button type="submit" class="btn btn-primary rounded-pill py-2 fw-bold">Verify Account</button>
-                </div>
-            </form>
+                    <div class="text-start">
+                        <label class="form-label small fw-bold text-muted ms-1">Enter Verification Code</label>
+                        {{ form.code }}
+                        {% if form.errors %}
+                        <div class="text-danger small mt-1 ms-1">
+                            {{ form.errors.code.0 }}
+                        </div>
+                        {% endif %}
+                    </div>
 
-            <p class="small text-muted mt-3">
-                Didn't receive the code? Check your spam folder or <a href="{% url 'register' %}"
-                    class="text-decoration-none" style="color: var(--accent-primary);">try registering again</a>.
-            </p>
+                    <button type="submit" class="btn btn-primary w-100 py-2 mt-2 shadow-sm">
+                        Verify & Continue <span class="ms-1">→</span>
+                    </button>
+
+                    <div class="text-center mt-2">
+                        <button type="submit" name="resend" class="btn btn-link text-muted text-decoration-none small">
+                            Resend Code
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="text-center mt-4">
+            <a href="{% url 'register' %}" class="text-muted text-decoration-none small">← Back to Sign Up</a>
         </div>
     </div>
 </div>

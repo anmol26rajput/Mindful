@@ -1,0 +1,177 @@
+{% extends 'journal/base.html' %}
+
+{% block content %}
+<style>
+    .landing-hero {
+        min-height: 80vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .landing-title {
+        font-family: 'Playfair Display', serif;
+        font-size: 4rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        background: linear-gradient(135deg, var(--text-main), var(--accent-primary));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        line-height: 1.2;
+    }
+
+    .landing-subtitle {
+        font-size: 1.25rem;
+        color: var(--text-muted);
+        max-width: 600px;
+        margin-bottom: 2.5rem;
+        line-height: 1.6;
+    }
+
+    .cta-button {
+        background: var(--accent-primary);
+        color: white;
+        padding: 15px 40px;
+        border-radius: 50px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        text-decoration: none;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        border: none;
+        display: inline-block;
+    }
+
+    .cta-button:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 20px rgba(212, 163, 115, 0.3);
+        color: white;
+        background: var(--accent-highlight);
+    }
+
+    .feature-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 2rem;
+        padding: 4rem 0;
+    }
+
+    .feature-card {
+        background: var(--glass-bg);
+        border: 1px solid var(--glass-border);
+        border-radius: 20px;
+        padding: 2rem;
+        text-align: center;
+        transition: transform 0.3s ease;
+    }
+
+    .feature-card:hover {
+        transform: translateY(-5px);
+    }
+
+    .feature-icon {
+        font-size: 2.5rem;
+        margin-bottom: 1.5rem;
+        display: inline-block;
+        padding: 15px;
+        background: rgba(212, 163, 115, 0.1);
+        border-radius: 50%;
+        color: var(--accent-primary);
+    }
+
+    .glass-orb {
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(80px);
+        z-index: -1;
+    }
+
+    .orb-1 {
+        width: 400px;
+        height: 400px;
+        background: rgba(250, 237, 205, 0.6);
+        top: -100px;
+        right: -100px;
+    }
+
+    .orb-2 {
+        width: 300px;
+        height: 300px;
+        background: rgba(212, 163, 115, 0.3);
+        bottom: 10%;
+        left: -50px;
+    }
+
+    @media (max-width: 768px) {
+        .landing-title {
+            font-size: 2.5rem;
+        }
+
+        .landing-hero {
+            min-height: 60vh;
+        }
+    }
+</style>
+
+<div class="landing-hero fade-in">
+    <div class="glass-orb orb-1"></div>
+    <div class="glass-orb orb-2"></div>
+
+    <div class="mb-4">
+        <span class="badge rounded-pill px-3 py-2"
+            style="background: rgba(212, 163, 115, 0.15); color: var(--accent-primary); letter-spacing: 1px;">
+            ✨ DAILY MINDFULNESS
+        </span>
+    </div>
+
+    <h1 class="landing-title">
+        Track habits.<br>Reflect daily.<br>Grow mindfully.
+    </h1>
+
+    <p class="landing-subtitle">
+        A calm space to journal your thoughts, build positive habits, and nurture your personal growth journey with
+        intention.
+    </p>
+
+    <div class="d-flex gap-3">
+        {% if user.is_authenticated %}
+        <a href="{% url 'dashboard' %}" class="cta-button">Go to Dashboard →</a>
+        {% else %}
+        <a href="{% url 'register' %}" class="cta-button">Get Started Free →</a>
+        <a href="{% url 'login' %}" class="btn btn-outline-secondary rounded-pill px-4 py-3 fw-bold"
+            style="border: 2px solid var(--border-color);">Log In</a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="feature-grid">
+    <div class="feature-card hover-lift">
+        <div class="feature-icon">📖</div>
+        <h3 class="h4 mb-3 serif">Daily Journaling</h3>
+        <p class="text-muted small">Capture your thoughts with guided prompts and free-form entries to reflect on your
+            day.</p>
+    </div>
+
+    <div class="feature-card hover-lift">
+        <div class="feature-icon">🌿</div>
+        <h3 class="h4 mb-3 serif">Habit Tracking</h3>
+        <p class="text-muted small">Build lasting habits with visual streaks and gentle reminders to keep you on track.
+        </p>
+    </div>
+
+    <div class="feature-card hover-lift">
+        <div class="feature-icon">✨</div>
+        <h3 class="h4 mb-3 serif">Mindful Insights</h3>
+        <p class="text-muted small">Discover patterns in your mood, sleep, and habits to celebrate your growth over
+            time.</p>
+    </div>
+</div>
+
+<footer class="text-center py-5 mt-5 border-top" style="border-color: var(--border-color) !important;">
+    <p class="text-muted small mb-0">© {% now "Y" %} Mindful. Made with intention.</p>
+</footer>
+
+{% endblock %}
