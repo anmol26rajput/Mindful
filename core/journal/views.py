@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from rest_framework.decorators import api_view
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.models import User
 from django.contrib import messages
 from .models import DailyEntry, UserProfile, OnboardingResponse, Habit, HabitCompletion, Feedback, Goal
 from .forms import EntryForm, UserProfileForm, OnboardingForm, HabitForm, FeedbackForm, GoalForm
@@ -16,7 +17,8 @@ from django.core.mail import send_mail
 from django.conf import settings
 import random
 from .models import EmailVerification
-from .forms import CustomUserCreationForm, OTPForm
+from .forms import CustomUserCreationForm, OTPForm, ChangeEmailForm
+from allauth.account.models import EmailAddress
 
 @api_view(['GET'])
 def landing(request):
@@ -32,6 +34,13 @@ def register(request):
             user = form.save(commit=False)
             user.is_active = False  # Deactivate until verified
             user.save()
+            
+            # Save DOB and calculate Age
+            dob = form.cleaned_data.get('date_of_birth')
+            if dob:
+                 today = timezone.now().date()
+                 age = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
+                 UserProfile.objects.create(user=user, date_of_birth=dob, age=age)
             
             # Generate OTP
             code = f"{random.randint(100000, 999999)}"
@@ -189,7 +198,6 @@ def habits_list(request):
         'form': form
     })
 
-@login_required
 # --- Helper Functions for Sleep Tracker ---
 def _calculate_sleep_stats(entries):
     sleep_data = [entry.sleep_hours for entry in entries]
@@ -275,6 +283,11 @@ def _handle_goal_post(request):
         goal_id = request.POST.get('goal_id')
         goal = get_object_or_404(Goal, id=goal_id, user=request.user)
         goal.is_completed = not goal.is_completed
+        if goal.is_completed:
+            request.user.userprofile.coins += 10
+        else:
+            request.user.userprofile.coins -= 10
+        request.user.userprofile.save()
         goal.save()
         return redirect('goals_tracker')
     elif 'delete_goal' in request.POST:
@@ -335,6 +348,13 @@ def _handle_dashboard_post(request, view_date, day_entry):
             entry.user = request.user
             entry.date = view_date
             entry.save()
+            
+            # Award coins for first-time logging
+            if day_entry is None:
+                profile = request.user.userprofile
+                profile.coins += 10
+                profile.save()
+                
             messages.success(request, "Entry saved successfully!")
             return HttpResponseRedirect(redirect_url)
             
@@ -351,14 +371,29 @@ def _handle_dashboard_post(request, view_date, day_entry):
         habit_id = request.POST.get('toggle_habit')
         habit = get_object_or_404(Habit, id=habit_id, user=request.user)
         completion, created = HabitCompletion.objects.get_or_create(habit=habit, date=view_date)
-        if not created:
+        
+        profile = request.user.userprofile
+        if created:
+             profile.coins += 10
+        else:
             completion.delete()
+            profile.coins -= 10
+            
+        profile.save()
         return HttpResponseRedirect(redirect_url)
         
     elif 'toggle_goal' in request.POST:
         goal_id = request.POST.get('goal_id')
         goal = get_object_or_404(Goal, id=goal_id, user=request.user)
         goal.is_completed = not goal.is_completed
+        
+        profile = request.user.userprofile
+        if goal.is_completed:
+            profile.coins += 10
+        else:
+            profile.coins -= 10
+        profile.save()
+        
         goal.save()
         return HttpResponseRedirect(redirect_url)
         
@@ -509,4 +544,94 @@ def submit_feedback(request):
             messages.error(request, "Something went wrong with your feedback.")
     
     # Redirect to the previous page where the user was
+    # Redirect to the previous page where the user was
     return redirect(request.META.get('HTTP_REFERER', 'dashboard'))
+
+@login_required
+@api_view(['POST'])
+def initiate_email_change(request):
+    user = request.user
+    # Generate OTP
+    code = f"{random.randint(100000, 999999)}"
+    EmailVerification.objects.update_or_create(
+        user=user,
+        defaults={'code': code}
+    )
+    
+    # Send Email
+    send_mail(
+        'Security Verification - Mindful Tracker',
+        f'To change your email, please verify your identity. Your code is: {code}',
+        settings.DEFAULT_FROM_EMAIL,
+        [user.email],
+        fail_silently=False,
+    )
+    
+    messages.info(request, f'Verification code sent to {user.email}')
+    return redirect('verify_email_change')
+
+@login_required
+@api_view(['GET', 'POST'])
+def verify_email_change(request):
+    if request.method == 'POST':
+        form = OTPForm(request.POST)
+        if form.is_valid():
+            code = form.cleaned_data['code']
+            try:
+                verification = EmailVerification.objects.get(user=request.user)
+                if verification.code == code and not verification.is_expired():
+                    # Success
+                    request.session['can_change_email'] = True
+                    verification.delete() # Cleanup
+                    messages.success(request, 'Identity verified. You can now change your email.')
+                    return redirect('change_email_final')
+                else:
+                    messages.error(request, 'Invalid or expired code.')
+            except EmailVerification.DoesNotExist:
+                messages.error(request, 'Verification session invalid. Please try again.')
+                return redirect('profile_overview')
+    else:
+        form = OTPForm()
+        
+    return render(request, 'journal/verify_change_email.html', {'form': form})
+
+@login_required
+@api_view(['GET', 'POST'])
+def change_email_final(request):
+    if not request.session.get('can_change_email'):
+        messages.error(request, "Unauthorized access. Please verify identity first.")
+        return redirect('profile_overview')
+
+    if request.method == 'POST':
+        form = ChangeEmailForm(request.POST)
+        if form.is_valid():
+            new_email = form.cleaned_data['new_email']
+            
+            # Check if email is already taken
+            if User.objects.filter(email=new_email).exists():
+                messages.error(request, "This email is already in use.")
+            else:
+                user = request.user
+                old_email = user.email
+                user.email = new_email
+                user.save()
+                
+                # Update AllAuth EmailAddress
+                try:
+                    email_obj = EmailAddress.objects.get(user=user, email=old_email)
+                    email_obj.email = new_email
+                    email_obj.verified = False
+                    email_obj.save()
+                    email_obj.send_confirmation(request)
+                except EmailAddress.DoesNotExist:
+                    # Create new if didn't exist
+                    EmailAddress.objects.create(user=user, email=new_email, primary=True, verified=False)
+                
+                # Cleanup session
+                del request.session['can_change_email']
+                messages.success(request, f"Email changed to {new_email}. Please verify it via the link sent.")
+                return redirect('profile_overview')
+    else:
+        form = ChangeEmailForm()
+        
+    return render(request, 'journal/change_email.html', {'form': form})

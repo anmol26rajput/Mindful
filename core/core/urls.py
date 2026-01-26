@@ -1,10 +1,11 @@
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, include
 from django.contrib.auth import views as auth_views
 from journal import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('accounts/', include('allauth.urls')),
     path('', views.landing, name='landing'),
     path('dashboard/', views.dashboard, name='dashboard'),
     path('register/', views.register, name='register'),
@@ -30,4 +31,9 @@ urlpatterns = [
     path('sleep/', views.sleep_tracker, name='sleep_tracker'),
     path('goals/', views.goals_tracker, name='goals_tracker'),
     path('journal/', views.journal_list, name='journal_list'),
+    
+    # Email Change Flow
+    path('email/change/initiate/', views.initiate_email_change, name='initiate_email_change'),
+    path('email/change/verify/', views.verify_email_change, name='verify_email_change'),
+    path('email/change/final/', views.change_email_final, name='change_email_final'),
 ]

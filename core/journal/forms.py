@@ -16,10 +16,22 @@ class EntryForm(forms.ModelForm):
 class UserProfileForm(forms.ModelForm):
     class Meta:
         model = UserProfile
-        fields = ['full_name', 'age', 'weight', 'location', 'primary_goal']
+        fields = ['full_name', 'date_of_birth', 'age', 'weight', 'location', 'primary_goal']
         widgets = {
             'primary_goal': forms.Textarea(attrs={'rows': 3, 'placeholder': 'Describe your main goals...'}),
+            'date_of_birth': forms.DateInput(attrs={'type': 'date'}),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Disable fields that shouldn't be edited if they are already set
+        if self.instance and self.instance.pk:
+            protected_fields = ['full_name', 'date_of_birth', 'age', 'weight', 'location']
+            for field in protected_fields:
+                if getattr(self.instance, field):
+                    self.fields[field].widget.attrs['disabled'] = 'disabled'
+                    self.fields[field].widget.attrs['readonly'] = True
+                    self.fields[field].required = False
 
 class OnboardingForm(forms.ModelForm):
     class Meta:
@@ -57,11 +69,15 @@ class GoalForm(forms.ModelForm):
         }
 
 class CustomUserCreationForm(UserCreationForm):
-    email = forms.EmailField(required=True, help_text='') # Remove help text here
+    email = forms.EmailField(required=True, help_text='')
+    date_of_birth = forms.DateField(
+        required=True,
+        widget=forms.DateInput(attrs={'type': 'date'})
+    )
 
     class Meta:
         model = User
-        fields = ['username', 'email'] # Explicit order
+        fields = ['username', 'email'] # Explicit order (DOB handled manually in view)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -81,10 +97,14 @@ class CustomUserCreationForm(UserCreationForm):
             'class': 'form-control ps-3 py-2 border-0',
             'style': 'background-color: rgba(255, 255, 255, 0.05); color: var(--text-main);'
         })
+        self.fields['date_of_birth'].widget.attrs.update({
+            'class': 'form-control ps-3 py-2 border-0',
+            'style': 'background-color: rgba(255, 255, 255, 0.05); color: var(--text-main);'
+        })
         # Add style to password fields as well (inherited from UserCreationForm)
         # Add style and placeholder to password fields as well (inherited from UserCreationForm)
         for field_name in self.fields:
-             if field_name not in ['email', 'username']:
+             if field_name not in ['email', 'username', 'date_of_birth']:
                 label = self.fields[field_name].label
                 self.fields[field_name].widget.attrs.update({
                     'placeholder': label,
@@ -100,3 +120,13 @@ class OTPForm(forms.Form):
         'pattern': '[0-9]*',
         'inputmode': 'numeric'
     }))
+
+class ChangeEmailForm(forms.Form):
+    new_email = forms.EmailField(
+        required=True, 
+        widget=forms.EmailInput(attrs={
+            'placeholder': 'Enter new email address',
+            'class': 'form-control ps-3 py-2 border-0',
+            'style': 'background-color: rgba(255, 255, 255, 0.05); color: var(--text-main);'
+        })
+    )

@@ -10,6 +10,8 @@ class UserProfile(models.Model):
     weight = models.FloatField(help_text="Weight in kg", null=True, blank=True)
     location = models.CharField(max_length=100, null=True, blank=True)
     primary_goal = models.TextField(help_text="What do you want to achieve?", null=True, blank=True)
+    date_of_birth = models.DateField(null=True, blank=True)
+    coins = models.IntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

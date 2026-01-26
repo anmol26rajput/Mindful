@@ -69,6 +69,19 @@
                     <a href="{% url 'password_change' %}"
                         class="btn btn-outline-secondary rounded-pill btn-sm px-4">Change Password</a>
                 </div>
+
+                <div class="d-flex justify-content-between align-items-center p-3 rounded-3 mt-3"
+                    style="background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border-color);">
+                    <div>
+                        <h6 class="fw-bold mb-1">Email Address</h6>
+                        <small class="text-muted">{{ user.email }}</small>
+                    </div>
+                    <form action="{% url 'initiate_email_change' %}" method="POST" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-outline-secondary rounded-pill btn-sm px-4">Change
+                            Email</button>
+                    </form>
+                </div>
             </div>
         </div>
     </div>

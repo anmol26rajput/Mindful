@@ -338,6 +338,15 @@
 
                 <!-- Actions -->
                 <div class="d-flex align-items-center gap-3 pt-3 pt-lg-0 border-lg-0 mt-2 mt-lg-0">
+                    <!-- Coin Display -->
+                    {% if user.is_authenticated %}
+                    <div class="d-flex align-items-center px-3 py-1 rounded-pill"
+                        style="background: rgba(212, 163, 115, 0.2); border: 1px solid var(--accent-primary);">
+                        <span class="me-2">🪙</span>
+                        <span class="fw-bold" style="color: var(--text-main);">{{ user.userprofile.coins }}</span>
+                    </div>
+                    {% endif %}
+
                     <!-- Theme Toggle -->
                     <div class="theme-toggle" id="themeToggle">
                         <svg id="sunIcon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
