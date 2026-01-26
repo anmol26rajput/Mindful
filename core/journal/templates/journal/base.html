@@ -98,14 +98,15 @@
         textarea {
             color: var(--text-main) !important;
             background-color: rgba(255, 255, 255, 0.05);
-            border-color: var(--border-color);
+            border: 1px solid var(--border-color) !important;
+            border-radius: 12px;
         }
 
         .form-control:focus {
             background-color: rgba(255, 255, 255, 0.1);
             color: var(--text-main) !important;
-            border-color: var(--accent-primary);
-            box-shadow: none;
+            border-color: var(--accent-primary) !important;
+            box-shadow: 0 0 0 3px rgba(212, 163, 115, 0.15);
         }
 
         /* Placeholder Color */

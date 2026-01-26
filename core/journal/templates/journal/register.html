@@ -16,13 +16,13 @@
             <div class="card-body p-0">
 
                 <div class="d-flex p-1 mb-4 rounded-3"
-                    style="background-color: rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 255, 255, 0.1);">
+                    style="background-color: var(--bg-body); border: 1px solid var(--border-color);">
                     <a href="{% url 'login' %}" class="btn btn-sm w-50 rounded-3 text-muted fw-medium py-2"
                         style="transition: all 0.2s;">
                         Sign In
                     </a>
                     <a href="{% url 'register' %}" class="btn btn-sm w-50 rounded-3 shadow-sm fw-bold py-2"
-                        style="background-color: rgba(255, 255, 255, 0.1); color: var(--text-main); border: 1px solid rgba(255, 255, 255, 0.05);">
+                        style="background-color: var(--glass-bg); color: var(--text-main); border: 1px solid var(--border-color);">
                         Sign Up
                     </a>
                 </div>
@@ -54,15 +54,15 @@
                 </form>
 
                 <div class="d-flex align-items-center my-4 pt-2">
-                    <hr class="flex-grow-1 opacity-25" style="border-color: var(--text-muted);">
+                    <hr class="flex-grow-1" style="border-color: var(--border-color); opacity: 0.5;">
                     <span class="mx-3 text-muted small text-uppercase"
                         style="font-size: 0.7rem; letter-spacing: 1px;">OR CONTINUE WITH</span>
-                    <hr class="flex-grow-1 opacity-25" style="border-color: var(--text-muted);">
+                    <hr class="flex-grow-1" style="border-color: var(--border-color); opacity: 0.5;">
                 </div>
 
                 <button
-                    class="btn btn-outline-secondary w-100 d-flex align-items-center justify-content-center gap-2 border opacity-75 shadow-sm py-2"
-                    style="border-radius: 50px; color: var(--text-main); background-color: transparent; border-color: var(--text-muted);">
+                    class="btn btn-outline-secondary w-100 d-flex align-items-center justify-content-center gap-2 border shadow-sm py-2"
+                    style="border-radius: 50px; color: var(--text-main); background-color: transparent; border-color: var(--border-color);">
                     <svg width="18" height="18" viewBox="0 0 24 24">
                         <path fill="currentColor"
                             d="M21.35 11.1h-9.17v2.73h6.51c-.33 3.81-3.5 5.44-6.5 5.44C8.36 19.27 5 16.25 5 12c0-4.1 3.2-7.27 7.2-7.27 3.09 0 4.9 1.97 4.9 1.97L19 4.72S16.56 2 12.1 2C6.42 2 2.03 6.8 2.03 12c0 5.05 4.13 10 10.22 10 5.35 0 9.25-3.67 9.25-9.09 0-1.15-.15-1.81-.15-1.81z" />
